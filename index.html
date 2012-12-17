@@ -1,0 +1,158 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+        "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<!--
+
+  (c) 2009: Laurentiu Macovei, laurentiu.macovei@dotnetwise.com
+
+-->
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+	<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+	<meta name="Author" content="Laurentiu Macovei" />
+	<meta name="Company" content="DotNetWise" />
+	<title>DotNetWise | Closure Compiler Externs Extractor</title>
+</head>
+<body>
+	<h1>
+		Closure Compiler Externs Extractor</h1>
+	<p style="color:#444">Read more about <a href="http://blog.dotnetwise.com/2009/11/closure-compiler-externs-extractor.html">Closure Compiler Externs</a><br/>
+Note that <a href="http://jquery.com/">jQuery-1.3.2.min.js</a>, <a href="http://code.google.com/p/ajaxsoft/wiki/xLazyLoader">jQuery-XLazyLoader.js</a> and <a href="http://jsbeautifier.org/">Beautify.min.js</a>  are already loaded in this example
+</p>
+	<p>
+		Load your javascript file:<br />
+		Url:
+		<input type="text" value="" id="jsToLoad" size="120">
+		<br />
+		<input type="button" value="Load" onclick="var val = $('#jsToLoad').val();val ? load({js: val}):alert('Please enter the url of your javascript file to be loaded'); return false;">
+		<div id="loadLog">
+		</div>
+	</p>
+	<p>
+		Enter the javascript object you want to extern i.e. jQuery:<br />
+		<input type="text" value="" id="val" />
+
+		<script type="text/javascript" src="Beautify.min.js"></script>
+
+		<script type="text/javascript" src="jQuery-1.3.2.min.js"></script>
+
+		<script type="text/javascript" src="jQuery-xLazyLoader.js"></script>
+
+	</p>
+	<br />
+	<input type="button" value="Extern!" onclick="extract($('#val').val())" />
+	<br />
+	<textarea id="result" rows="25" cols="100"></textarea>
+
+	<script>
+		function isFunction(obj) {
+			return Object.prototype.toString.call(obj) === "[object Function]";
+		}
+		var _escapeable = /["\\\x00-\x1f\x7f-\x9f]/g;
+		function quoteString(string) {
+			if (string.match(_escapeable)) {
+				return '"' + string.replace(_escapeable, function(a) {
+					var c = _meta[a];
+					if (typeof c === 'string') return c;
+					c = a.charCodeAt();
+					return '\\u00' + Math.floor(c / 16).toString(16) + (c % 16).toString(16);
+				}) + '"';
+			}
+			return '"' + string + '"';
+		};
+		function extern(obj) {
+			var msg = "";
+			var appendBrace = typeof obj == "object" || isFunction(obj);
+			if (appendBrace)
+				msg += "{";
+			for (var p in obj) {
+				if (msg.length > 1)
+					msg += ",";
+				//else {
+				//if (Object.prototype.toString.call(obj) !== "[object Array]") {
+				msg += quoteString(p) + " : ";
+				if (typeof obj[p] == "object") {
+					var r = extern(obj[p]);
+					if (r == "{}")
+						msg += "function(){}";
+					else msg += r;
+
+				}
+				else {
+					if (isFunction(obj[p]))
+						msg += "function(){}";
+					else msg += "{}";
+				}
+				//}
+				//				}
+			}
+			if (appendBrace)
+				msg += "}";
+			return msg;
+		}
+		function extract(txt) {
+			var result = "", obj, undefined;
+			if (!txt)
+				result = "Please specify the object you want to export!";
+			else {
+				try {
+					obj = eval(txt);
+				}
+				catch (e) {
+					obj = undefined;
+					result = e;
+				}
+				if (obj === undefined)
+					result += "\n" + txt + " is undefined!";
+				else {
+					var parents = txt.toString().split(/\./), i = 5;
+					if (parents.length > 1) {
+						do {
+							var o = {};
+							o[parents[parents.length - 1]] = obj;
+							obj = o;
+							parents.splice(parent.length - 1, 1);
+							if (parents.length === 1)
+								txt = parents[0];
+						}
+						while (parents.length > 0 && i-- > 0)
+					}
+					result = "var " + txt + " = " + extern(obj);
+				}
+			}
+
+			$('#result').html(js_beautify(result, { indent_size: 4, indent_char: ' ', preserve_newlines: true, space_after_anon_function: true }));
+			return false;
+		}
+		function log(msg) {
+			$("#loadLog").prepend(msg + "<br/>");
+		}
+		var time;
+		function load(data) {
+			time = new Date().getTime();
+			$.xLazyLoader($.extend(data, {
+				success: logDiff,
+				error: function(errors) {
+					alert('failed');
+					log("Load Failed: " + errors);
+				}
+
+			}));
+
+		};
+		function logDiff(arg) {
+			var time1 = new Date().getTime() - time;
+			log("Loaded: " + arg + " in " + time1 + ' ms');
+		}; 
+	</script>
+<script type="text/javascript">
+var gaJsHost = (("https:" == document.location.protocol) ? "https://ssl." : "http://www.");
+document.write(unescape("%3Cscript src='" + gaJsHost + "google-analytics.com/ga.js' type='text/javascript'%3E%3C/script%3E"));
+</script>
+<script type="text/javascript">
+try {
+var pageTracker = _gat._getTracker("UA-11643574-1");
+pageTracker._trackPageview();
+} catch(err) {}</script>
+
+</body>
+</html>
