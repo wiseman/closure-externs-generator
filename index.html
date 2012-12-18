@@ -37,13 +37,19 @@
 		i.e. jQuery:<br /> <input type="text" value=""
 		id="val" />
 
-		<script type="text/javascript" src="Beautify.min.js"></script>
+		<script type="text/javascript" src="beautify.js"></script>
 		<script type="text/javascript" src="jQuery-1.3.2.min.js"></script>
 		<script type="text/javascript" src="jQuery-xLazyLoader.js"></script>
+                <script>
+                  function process() {
+                    var namespace = $('#val').val();
+                    extract(namespace);
+                  }
+                </script>
 
 	</p>
 	<br />
-	<input type="button" value="Extern!" onclick="extract($('#val').val())" />
+	<input type="button" value="Extern!" onclick="process()" />
 	<br />
 	<textarea id="result" rows="25" cols="100"></textarea>
 

@@ -1,21 +1,34 @@
-function isFunction(obj) {
-  return Object.prototype.toString.call(obj) === '[object Function]';
-}
-
-
 var _escapeable = /["\\\x00-\x1f\x7f-\x9f]/g;
+
+var urls = [];
 
 
 function keys(obj)
 {
-    var keys = [];
+  var keys = [];
 
-    for(var key in obj) {
-      if(obj.hasOwnProperty(key)) {
-        keys.push(key);
-      }
+  for (var key in obj) {
+    if (obj.hasOwnProperty(key)) {
+      keys.push(key);
     }
+  }
   return keys;
+}
+
+
+function isObject(obj) {
+  return typeof obj === 'object';
+}
+
+
+function isClass(obj) {
+  var result = (typeof obj === 'function' && typeof obj.prototype === 'object');
+  return result;
+}
+
+
+function isFunction(obj) {
+  return Object.prototype.toString.call(obj) === '[object Function]';
 }
 
 
@@ -29,12 +42,12 @@ function quoteString(string) {
     }) + '\'';
   }
   return '\'' + string + '\'';
-};
+}
 
 
 function extern(obj) {
   var msg = '';
-  var appendBrace = typeof obj == 'object' || isFunction(obj);
+  var appendBrace = isObject(obj) || isFunction(obj);
   if (appendBrace)
     msg += '{';
   var k = keys(obj).sort();
@@ -45,17 +58,17 @@ function extern(obj) {
     //else {
     //if (Object.prototype.toString.call(obj) !== '[object Array]') {
     msg += quoteString(p) + ' : ';
-    if (typeof obj[p] == 'object') {
+    if (isObject(obj[p])) {
       var r = extern(obj[p]);
-      if (r == '{}') {
-	msg += 'function() {}';
+      if (r === '{}') {
+        msg += 'function() {}';
       } else {
         msg += r;
       }
-    } else if (typeof obj[p] == 'function' && typeof obj[p].prototype == 'object') {
+    } else if (isClass(obj[p])) {
       var r = extern(obj[p].prototype);
-      if (r == '{}') {
-	msg += 'function() {}';
+      if (r === '{}') {
+        msg += 'function() {}';
       } else {
         msg += r;
       }
@@ -65,7 +78,7 @@ function extern(obj) {
       msg += '{}';
     }
     //}
-    //				}
+    //                          }
   }
   if (appendBrace)
     msg += '}';
@@ -90,17 +103,25 @@ function extract(txt) {
     else {
       var parents = txt.toString().split(/\./), i = 5;
       if (parents.length > 1) {
-	do {
-	  var o = {};
-	  o[parents[parents.length - 1]] = obj;
-	  obj = o;
-	  parents.splice(parent.length - 1, 1);
-	  if (parents.length === 1)
-	    txt = parents[0];
-	}
-	while (parents.length > 0 && i-- > 0)
+        do {
+          var o = {};
+          o[parents[parents.length - 1]] = obj;
+          obj = o;
+          parents.splice(parent.length - 1, 1);
+          if (parents.length === 1)
+            txt = parents[0];
+        }
+        while (parents.length > 0 && i-- > 0);
       }
-      result = 'var ' + txt + ' = ' + extern(obj);
+      result = '// Externs file generated at ' + new Date() + '\n';
+      result += '//\n';
+      result += '// Source URLs:\n';
+      for (var i = 0; i < urls.length; i++) {
+        result += '//   ' + urls[i] + '\n';
+      }
+      result += '//\n';
+      result += '// Namespace: ' + txt + '\n\n';
+      result += 'var ' + txt + ' = ' + extern(obj) + ';\n';
     }
   }
 
@@ -123,6 +144,7 @@ function log(msg) {
 
 var time;
 function load(data) {
+  urls.push(data.js);
   time = new Date().getTime();
   $.xLazyLoader($.extend(data, {
     success: logDiff,
@@ -133,8 +155,10 @@ function load(data) {
 
   }));
 
-};
+}
+
 function logDiff(arg) {
   var time1 = new Date().getTime() - time;
   log('Loaded: ' + arg + ' in ' + time1 + ' ms');
-};
+}
+
