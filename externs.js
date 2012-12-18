@@ -104,7 +104,14 @@ function extract(txt) {
     }
   }
 
-  $('#result').html(js_beautify(result, { indent_size: 2, indent_char: ' ', preserve_newlines: true, space_after_anon_function: true }));
+  beautify_options = {
+    indent_size: 2,
+    indent_char: ' ',
+    preserve_newlines: true,
+    space_after_anon_function: true,
+    jslint_happy: false
+  };
+  $('#result').html(js_beautify(result, beautify_options));
   return false;
 }
 
